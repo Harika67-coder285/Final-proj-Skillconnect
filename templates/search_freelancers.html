@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Index - SkillConnect Bootstrap Template</title>
+  <meta name="description" content="" />
+  <meta name="keywords" content="" />
+
+  <!-- Favicons -->
+
+  <link href="{% static 'img/favicon.png'%}" rel="icon" />
+  <link href="{% static 'img/apple-touch-icon.png'%}" rel="apple-touch-icon" />
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect" />
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Nunito:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+    rel="stylesheet" />
+
+
+<link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet" />
+<link href="{% static 'vendor/bootstrap-icons/bootstrap-icons.css' %}" rel="stylesheet" />
+<link href="{% static 'vendor/aos/aos.css' %}" rel="stylesheet" />
+<link href="{% static 'vendor/glightbox/css/glightbox.min.css' %}" rel="stylesheet" />
+<link href="{% static 'vendor/swiper/swiper-bundle.min.css' %}" rel="stylesheet" />
+
+<link href="{% static 'css/main.css' %}" rel="stylesheet" />
+<style>
+  .badge {
+  font-size: 11px;
+  padding: 4px 6px;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+</style>
+</head>
+<body>
+  <header id="header" class="header d-flex align-items-center fixed-top">
+  <div class="header-container container-fluid container-xl position-relative d-flex align-items-center justify-content-between">
+
+    <a href="{% url 'home' %}" class="logo d-flex align-items-center me-auto me-xl-0">
+      <img src="{% static 'img/logo.png'%}" alt="SkillConnect Logo" />
+      <h1 class="sitename">SkillConnect</h1>
+    </a>
+
+    <nav id="navmenu" class="navmenu">
+  <ul>
+    <!-- Home -->
+    <li><a href="{% url 'home' %}" class="active">Home</a></li>
+
+    
+
+    <li><a href="{% url 'browse' %}" id="browse-link"></a></li>
+
+
+    {% if request.session.account_type == "recruiter" %}
+        <li>
+          <a href="{% url 'post_job' %}" class="btn btn-primary" style="padding:10px;color:white">
+            <i class="bi bi-plus-lg"></i> Post Job
+          </a>
+        </li>
+
+        {% endif %}
+
+{% if request.session.account_type == "freelancer" %}
+    <li><a href="{% url 'jobs_list' %}">Find Work</a></li>
+<li class="dropdown">
+  <a href="#">
+    Notifications
+    {% if notification_count > 0 %}
+      <span class="badge bg-danger">{{ notification_count }}</span>
+    {% endif %}
+  </a>
+
+  <ul>
+    {% for n in freelancer_notifications %}
+      <li>
+        <a href="{% url 'freelancer_contracts' %}">
+          {{ n.message }}
+        </a>
+      </li>
+    {% empty %}
+      <li><span class="dropdown-item">No notifications</span></li>
+    {% endfor %}
+  </ul>
+  <li>
+  <a href="{%url 'freelancer_contracts'%}">Contract Requests</a>
+  </li>
+</li>
+{% endif %}
+
+
+    <!-- Profile Avatar -->
+<!-- Profile Avatar -->
+<!-- Profile Avatar -->
+<li id="profile-link" style="display:none;">
+  {% if request.session.account_type == "freelancer" %}
+    <a href="{% url 'dashboard' %}" class="profile-avatar">
+        {% if app_user and app_user.photo %}
+    <img src="{{ app_user.photo.url }}">
+{% else %}
+    <img src="{% static 'img/image.png' %}">
+{% endif %}
+  {% else %}
+  <a href="{% url 'recruiter_dashboard' %}" class="profile-avatar">
+        {% if app_user and app_user.photo %}
+    <img src="{{ app_user.photo.url }}">
+{% else %}
+    <img src="{% static 'img/image.png' %}">
+{% endif %}
+    </a>
+    {% endif %}
+</li>
+
+<!-- Login / Signup -->
+<li id="login-link"><a href="{% url 'login_page' %}" class="btn-getstarted">Login</a></li>
+<li id="signup-link"><a href="{% url 'register_page' %}" class="btn-getstarted">Sign Up</a></li>
+
+<!-- Logout -->
+<li id="header-logout" style="display:none;">
+    <a href="javascript:void(0)" onclick="logoutHeader()" class="btn-getstarted" style="padding:10px">Logout</a>
+</li>
+
+
+  </ul>
+
+  <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+</nav>
+
+  </div>
+</header>
+<div class="container mt-5">
+
+    <h3 class="mb-4">Search Freelancers</h3>
+
+    <!-- 🔍 SEARCH FORM -->
+    <form method="GET" class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <input type="text" name="skill" class="form-control" placeholder="Skill (React, Python)">
+        </div>
+
+        <div class="col-md-2">
+            <select name="experience" class="form-control">
+                <option value="">Experience</option>
+                <option value="fresher">Fresher</option>
+                <option value="experienced">Experienced</option>
+                <option value="expert">Expert</option>
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <input type="text" name="location" class="form-control" placeholder="Location">
+        </div>
+
+        <div class="col-md-2">
+            <input type="number" name="hourly_rate" class="form-control" placeholder="Max ₹/hr">
+        </div>
+
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100">Search</button>
+        </div>
+
+    </form>
+
+    <!-- 👤 RESULTS -->
+    {% for freelancer in freelancers %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <h5>{{ freelancer.full_name }}</h5>
+            <p>
+                <strong>Skills:</strong> {{ freelancer.skills }} <br>
+                <strong>Experience:</strong> {{ freelancer.experience_level }} <br>
+                <strong>Location:</strong> {{ freelancer.location }} <br>
+                <strong>Hourly Rate:</strong> ₹{{ freelancer.hourly_rate }}
+            </p>
+        </div>
+    </div>
+    {% empty %}
+        <p>No freelancers found.</p>
+    {% endfor %}
+
+</div>
+<script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'vendor/php-email-form/validate.js' %}"></script>
+<script src="{% static 'vendor/aos/aos.js' %}"></script>
+<script src="{% static 'vendor/glightbox/js/glightbox.min.js' %}"></script>
+<script src="{% static 'vendor/swiper/swiper-bundle.min.js' %}"></script>
+<script src="{% static 'vendor/purecounter/purecounter_vanilla.js' %}"></script>
+
+  <!-- Main JS File (keeps your original if present) -->
+  <script src="{% static 'js/skillconnect.js'%}"></script>
+
+  <!-- Small inline script: fixes mobile nav & dropdowns so header works even if external JS fails -->
+  <script>
+
+document.addEventListener("DOMContentLoaded", () => {
+    const userId = "{{ request.session.user_id|default:'' }}";
+    const accountType = "{{ request.session.account_type|default:''|escapejs }}";
+
+    const profileLink = document.getElementById("profile-link");
+    const loginLink = document.getElementById("login-link");
+    const signupLink = document.getElementById("signup-link");
+    const headerLogout = document.getElementById("header-logout");
+    const browseLink = document.getElementById("browse-link");
+    const categoriesLink = document.getElementById("categories-link"); // 👈 new
+
+    if (userId) {
+        if (profileLink) profileLink.style.display = "flex";
+        if (headerLogout) headerLogout.style.display = "block";
+        if (loginLink) loginLink.style.display = "none";
+        if (signupLink) signupLink.style.display = "none";
+        if (browseLink && accountType!== "freelancer") {
+            browseLink.style.display = "block";
+            browseLink.innerText = "Find Freelancers";
+        }
+        if (browseLink && accountType=== "freelancer") {
+            browseLink.style.display = "none";
+        }
+        if (categoriesLink && accountType!== "freelancer") categoriesLink.style.display = "block"; // 👈 show categories for logged-in users
+        if (categoriesLink && accountType=== "freelancer") categoriesLink.style.display = "none"; // 👈 show categories for logged-in users
+
+    } else {
+        if (profileLink) profileLink.style.display = "none";
+        if (headerLogout) headerLogout.style.display = "none";
+        if (loginLink) loginLink.style.display = "block";
+        if (signupLink) signupLink.style.display = "block";
+        if (browseLink) browseLink.style.display = "none";
+        if (categoriesLink) categoriesLink.style.display = "none"; // 👈 hide categories for guests
+    }
+});
+
+function logoutHeader() {
+    window.location.href = "{% url 'logout_user' %}";
+}
+
+    (function () {
+      // Mobile nav toggle
+      const mobileToggle = document.querySelector('.mobile-nav-toggle');
+      const navmenu = document.querySelector('#navmenu');
+      if (mobileToggle && navmenu) {
+        mobileToggle.addEventListener('click', function (e) {
+          e.preventDefault();
+          document.body.classList.toggle('mobile-nav-active');
+          // toggle icon class
+          this.classList.toggle('bi-list');
+          this.classList.toggle('bi-x');
+        });
+      }
+
+      // Desktop dropdowns: allow hover to show (handled by CSS), but ensure nested dropdowns work on click for mobile
+      // Add click handlers to .dropdown > a for mobile behavior
+      const dropdownToggles = document.querySelectorAll('#navmenu .dropdown > a.dropdown-toggle, #navmenu .dropdown > a');
+      dropdownToggles.forEach(btn => {
+        btn.addEventListener('click', function (e) {
+          // On small screens, toggle the submenu
+          if (window.innerWidth <= 1199) {
+            e.preventDefault();
+            const parentLi = this.parentElement;
+            const submenu = parentLi.querySelector('ul');
+            if (!submenu) return;
+            const isOpen = submenu.classList.contains('dropdown-active');
+            // hide other open dropdowns at same level (optional)
+            parentLi.querySelectorAll('.dropdown-active').forEach(el => el.classList.remove('dropdown-active'));
+            if (!isOpen) submenu.classList.add('dropdown-active');
+            else submenu.classList.remove('dropdown-active');
+          }
+        });
+      });
+
+      // Close mobile nav when clicking outside (optional)
+      document.addEventListener('click', function (e) {
+        const target = e.target;
+        if (!navmenu.contains(target) && !mobileToggle.contains(target) && document.body.classList.contains('mobile-nav-active')) {
+          document.body.classList.remove('mobile-nav-active');
+          if (mobileToggle) {
+            mobileToggle.classList.remove('bi-x');
+            mobileToggle.classList.add('bi-list');
+          }
+        }
+      });
+
+      // Accessibility: close mobile nav on ESC
+      document.addEventListener('keyup', function (e) {
+        if (e.key === 'Escape' && document.body.classList.contains('mobile-nav-active')) {
+          document.body.classList.remove('mobile-nav-active');
+          if (mobileToggle) {
+            mobileToggle.classList.remove('bi-x');
+            mobileToggle.classList.add('bi-list');
+          }
+        }
+      });
+
+      // Init AOS if available
+      if (window.AOS) AOS.init();
+
+      // Basic fallback for glightbox/purecounter/swiper if those libs exist in your assets
+      if (window.PureCounter) { try { new PureCounter(); } catch (e) {} }
+      if (window.GLightbox) { try { GLightbox && GLightbox({ selector: '.glightbox' }); } catch (e) {} }
+      // Swiper config: if you have your custom init in skillconnect.js it will run instead; keep this minimal
+      if (window.Swiper) {
+        document.querySelectorAll('.init-swiper').forEach(wrapper => {
+          // config is embedded in <script type="application/json" class="swiper-config"> inside the wrapper
+          const configEl = wrapper.querySelector('.swiper-config');
+          let cfg = {};
+          try { cfg = JSON.parse(configEl && configEl.textContent || '{}'); } catch (e) {}
+          const container = wrapper.querySelector('.swiper-wrapper').parentElement;
+          if (container && !container.classList.contains('swiper-initialized')) {
+            new Swiper(container, cfg);
+          }
+        });
+      }
+    })();
+  </script>
+  
+</body>
+</html>
