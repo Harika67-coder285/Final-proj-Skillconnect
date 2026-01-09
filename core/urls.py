@@ -9,10 +9,12 @@ from users.views import (
     dashboard, login_page, register_page, verify_otp_page,logout_user,complete_profile,my_projects,messages,client_requests,edit_profile_picture,settings_page,update_profile,chatbox,chatbot, post_job,
     recruiter_applications,
     update_application_status,
-    apply_job,my_jobs,job_applications,edit_job,delete_job,search_freelancers,hired_talent,create_direct_contract,recruiter_analysis,financial_reports,work_dashboard,contract_timesheets,schedule_interview,chat,applications,interviews,contracts,reports,analysis_dashboard,browse_freelancers,freelancer_contracts,contract_action,jobs_list,recruiter_dashboard,freelancer_dashboard,jobs_applied,save_job,saved_jobs,forgot_password,reset_password,chat_room,send_message,fetch_messages,list_recruiters,freelancer_settings,recruiter_settings,chat_view,chat_list_view,freelancer_chat_list,recruiter_chat_list,combined_chat_view,start_chat
+    apply_job,my_jobs,job_applications,edit_job,delete_job,search_freelancers,hired_talent,create_direct_contract,recruiter_analysis,financial_reports,work_dashboard,contract_timesheets,schedule_interview,chat,applications,interviews,contracts,reports,analysis_dashboard,browse_freelancers,freelancer_contracts,contract_action,jobs_list,recruiter_dashboard,freelancer_dashboard,jobs_applied,save_job,saved_jobs,forgot_password,reset_password,chat_room,send_message,fetch_messages,list_recruiters,freelancer_settings,recruiter_settings,chat_view,chat_list_view,freelancer_chat_list,recruiter_chat_list,combined_chat_view,start_chat,resend_otp
 )
 
 urlpatterns = [path("room/<int:other_user_id>/<str:other_user_type>/", chat_room, name="chat_room"),
+path("resend-otp/", resend_otp, name="resend_otp"),
+
  path("recruiters/",list_recruiters, name="list_recruiters"),
     path('chat/<int:freelancer_id>/<int:recruiter_id>/', chat_view, name='chat'),
     path('send-message/', send_message, name='send_message'),

@@ -23,9 +23,7 @@ env/
 # Media files (user uploads)
 media/
 
-# Static files (can be collected in deployment)
-staticfiles/
-static/
+
 
 # Logs
 *.log

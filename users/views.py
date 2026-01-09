@@ -133,55 +133,111 @@ def dashboard(request):
 def login_page(request): return render(request, "login.html")
 def register_page(request): return render(request, "signup.html")
 
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.utils import timezone
+from datetime import timedelta
+import random
+
+from .models import Freelancer, Recruiter, OTP
+
+
 def verify_otp_page(request):
     email = request.GET.get("email")
-    if not email:
-        return redirect('register_page')
     return render(request, "verify_otp.html", {"email": email})
 
-# ---------- Register User ----------
 
-
-
-
-
-# ---------- Verify OTP ----------
-@csrf_exempt
 def verify_otp(request):
     if request.method == "POST":
         email = request.POST.get("email")
         entered_otp = request.POST.get("otp")
 
-        if not email or not entered_otp:
-            return JsonResponse({"status": "error", "message": "Email and OTP are required."})
-
         otp_record = OTP.objects.filter(email=email).order_by('-created_at').first()
         if not otp_record:
-            return JsonResponse({"status": "error", "message": "No OTP found for this email."})
+            return JsonResponse({"status": "error", "message": "OTP not found."})
 
         if timezone.now() > otp_record.created_at + timedelta(minutes=10):
             otp_record.delete()
-            return JsonResponse({"status": "error", "message": "OTP expired. Please signup again."})
+            return JsonResponse({"status": "error", "message": "OTP expired."})
 
         if str(otp_record.code) != str(entered_otp):
             return JsonResponse({"status": "error", "message": "Incorrect OTP."})
 
-        # Activate user
         if Freelancer.objects.filter(email=email).exists():
             user = Freelancer.objects.get(email=email)
-            user.is_active = False
-            user.save()
-        elif Recruiter.objects.filter(email=email).exists():
+            account_type = "freelancer"
+            redirect_url = "freelancer-dashboard"
+        else:
             user = Recruiter.objects.get(email=email)
-            user.is_active = False
-            user.save()
+            account_type = "recruiter"
+            redirect_url = "recruiter-dashboard"
+
+        user.is_active = True
+        user.save()
+
+        request.session['user_id'] = user.id
+        request.session['account_type'] = account_type
 
         otp_record.delete()
-        return JsonResponse({"status": "success", "message": "OTP verified. Redirecting to login..."})
 
-    return JsonResponse({"status": "error", "message": "Invalid request."})
+        return JsonResponse({
+            "status": "success",
+            "message": "OTP verified successfully!",
+            "redirect_url": redirect_url
+        })
 
 
+def resend_otp(request):
+    if request.method == "POST":
+        try:
+            email = request.POST.get("email")
+
+            if not email:
+                return JsonResponse({
+                    "status": "error",
+                    "message": "Email is required."
+                })
+
+            otp_code = str(random.randint(100000, 999999))
+
+            # Save OTP
+            OTP.objects.create(
+                email=email,
+                code=otp_code,
+                created_at=timezone.now()
+            )
+
+            # Send OTP email
+            send_mail(
+                subject="SkillConnect OTP Verification",
+                message=(
+                    f"Hello,\n\n"
+                    f"Your OTP for SkillConnect verification is:\n\n"
+                    f"{otp_code}\n\n"
+                    f"This OTP is valid for 10 minutes.\n\n"
+                    f"Do not share this OTP with anyone.\n\n"
+                    f"— SkillConnect Team"
+                ),
+                from_email="noreply@skillconnect.com",
+                recipient_list=[email],
+                fail_silently=False,
+            )
+
+            return JsonResponse({
+                "status": "success",
+                "message": "A new OTP has been sent to your email."
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                "status": "error",
+                "message": str(e)
+            })
+
+    return JsonResponse({
+        "status": "error",
+        "message": "Invalid request."
+    })
 
 from django.core.mail import send_mail
 import random
