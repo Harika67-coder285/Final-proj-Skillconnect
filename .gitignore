@@ -20,7 +20,6 @@ env/
 */migrations/*.py
 !*/migrations/__init__.py
 
-
 # Logs
 *.log
 
