@@ -20,10 +20,6 @@ env/
 */migrations/*.py
 !*/migrations/__init__.py
 
-# Media files (user uploads)
-media/
-
-
 
 # Logs
 *.log
