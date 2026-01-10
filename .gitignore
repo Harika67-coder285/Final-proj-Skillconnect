@@ -2,12 +2,12 @@
 # Python / Django
 # ==============================
 
-# Byte-compiled / optimized / DLL files
+# Byte-compiled / optimized
 __pycache__/
 *.py[cod]
-*$py.class
+*.pyc
 
-# Virtual environment
+# Virtual environments
 venv/
 env/
 .venv/
@@ -16,25 +16,21 @@ env/
 .env
 *.env
 
-# Django migrations (keep __init__.py)
-*/migrations/*.py
-!*/migrations/__init__.py
+# Database (local only)
+db.sqlite3
+
+# Django static & media (generated)
+staticfiles/
+media/
 
 # Logs
 *.log
 
-# Coverage reports
+# Test / coverage
 htmlcov/
 .coverage
 coverage.xml
-nosetests.xml
-*.cover
-*.py,cover
-
-# pytest cache
 .pytest_cache/
-
-# mypy
 .mypy_cache/
 
 # Django secret keys
@@ -43,6 +39,7 @@ nosetests.xml
 # ==============================
 # IDEs / Editors
 # ==============================
+
 .vscode/
 .idea/
 *.iml
@@ -51,19 +48,16 @@ out/
 *.sublime-project
 *.sublime-workspace
 
+# ==============================
 # OS files
+# ==============================
+
 .DS_Store
 Thumbs.db
 
 # ==============================
 # Misc
 # ==============================
+
 *.swp
 *.bak
-venv/
-.env
-__pycache__/
-db.sqlite3
-media/
-staticfiles/
-*.pyc
