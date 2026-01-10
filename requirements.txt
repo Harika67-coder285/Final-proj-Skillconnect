@@ -21,4 +21,5 @@ urllib3==2.6.3
 whitenoise==6.11.0
 pdfplumber
 pdfminer.six
-google-generativeai
+google-genai
+
