@@ -2,15 +2,21 @@ from pathlib import Path
 from decouple import config
 import os
 from dotenv import load_dotenv
+
+# Load environment variables from .env
 load_dotenv()
 
+# -------------------- BASE DIRECTORY --------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# -------------------- SECURITY --------------------
 SECRET_KEY = config('SECRET_KEY')
-DEBUG = config('DEBUG', cast=bool)
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = []
+# Add your PythonAnywhere domain here
+ALLOWED_HOSTS = [config('ALLOWED_HOSTS', default='yourusername.pythonanywhere.com')]
 
+# -------------------- INSTALLED APPS --------------------
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -20,26 +26,28 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'corsheaders',
-    'users',
+    'users',  # your custom app
 ]
 
+# -------------------- MIDDLEWARE --------------------
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
 
-    # CORS must be at the TOP
+    # CORS middleware should be at the top
     'corsheaders.middleware.CorsMiddleware',
 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# -------------------- URL CONFIG --------------------
 ROOT_URLCONF = 'core.urls'
 
+# -------------------- TEMPLATES --------------------
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -52,27 +60,17 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
 
-                # ⭐️ ADD THIS LINE ⭐️
+                # Custom context processors
                 'users.context_processors.app_user',
-                "users.context_processors.recruiter_job_count",
-    'users.context_processors.freelancer_notifications',
-
-
+                'users.context_processors.recruiter_job_count',
+                'users.context_processors.freelancer_notifications',
             ],
         },
     },
 ]
 
+# -------------------- WSGI --------------------
 WSGI_APPLICATION = 'core.wsgi.application'
-
-# -------------------- STATIC FILES --------------------
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [
-    BASE_DIR / "static"
-]
-
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
 
 # -------------------- DATABASE --------------------
 DATABASES = {
@@ -89,10 +87,10 @@ DATABASES = {
     }
 }
 
+# -------------------- AUTH --------------------
 LOGIN_URL = "/login-page/"
 LOGIN_REDIRECT_URL = "/dashboard/"
 
-# -------------------- PASSWORD VALIDATORS --------------------
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -105,14 +103,29 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_TZ = True
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CSRF_COOKIE_SECURE = False
-CSRF_COOKIE_HTTPONLY = False
-SESSION_COOKIE_SECURE = False
-CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000']
+# -------------------- STATIC FILES --------------------
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR / "static",  # your local static folder
+]
+STATIC_ROOT = BASE_DIR / "staticfiles"  # for collectstatic on production
 
+# -------------------- MEDIA FILES --------------------
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / "media"
+
+# -------------------- CORS --------------------
+CORS_ALLOW_ALL_ORIGINS = True  # change to False in production if needed
+
+# -------------------- CSRF & SESSION --------------------
+CSRF_COOKIE_SECURE = False  # True if using HTTPS
+SESSION_COOKIE_SECURE = False  # True if using HTTPS
+CSRF_COOKIE_HTTPONLY = False
+CSRF_TRUSTED_ORIGINS = [f"https://{config('ALLOWED_HOSTS')}"]
+
+# -------------------- EMAIL --------------------
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
