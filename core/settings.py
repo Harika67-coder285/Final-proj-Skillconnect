@@ -101,12 +101,15 @@ USE_I18N = True
 USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# -------------------- STATIC FILES --------------------
 STATIC_URL = '/static/'
+
 STATICFILES_DIRS = [
-    BASE_DIR / "static",  # your local static folder
+    BASE_DIR / "static",   # where your CSS, JS, images live
 ]
-STATIC_ROOT = BASE_DIR / "staticfiles"  # for collectstatic on production
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # -------------------- MEDIA FILES --------------------
 MEDIA_URL = '/media/'
