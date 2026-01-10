@@ -142,102 +142,9 @@ import random
 from .models import Freelancer, Recruiter, OTP
 
 
-def verify_otp_page(request):
-    email = request.GET.get("email")
-    return render(request, "verify_otp.html", {"email": email})
 
 
-def verify_otp(request):
-    if request.method == "POST":
-        email = request.POST.get("email")
-        entered_otp = request.POST.get("otp")
 
-        otp_record = OTP.objects.filter(email=email).order_by('-created_at').first()
-        if not otp_record:
-            return JsonResponse({"status": "error", "message": "OTP not found."})
-
-        if timezone.now() > otp_record.created_at + timedelta(minutes=10):
-            otp_record.delete()
-            return JsonResponse({"status": "error", "message": "OTP expired."})
-
-        if str(otp_record.code) != str(entered_otp):
-            return JsonResponse({"status": "error", "message": "Incorrect OTP."})
-
-        if Freelancer.objects.filter(email=email).exists():
-            user = Freelancer.objects.get(email=email)
-            account_type = "freelancer"
-            redirect_url = "freelancer-dashboard"
-        else:
-            user = Recruiter.objects.get(email=email)
-            account_type = "recruiter"
-            redirect_url = "recruiter-dashboard"
-
-        user.is_active = True
-        user.save()
-
-        request.session['user_id'] = user.id
-        request.session['account_type'] = account_type
-
-        otp_record.delete()
-
-        return JsonResponse({
-            "status": "success",
-            "message": "OTP verified successfully!",
-            "redirect_url": redirect_url
-        })
-
-
-def resend_otp(request):
-    if request.method == "POST":
-        try:
-            email = request.POST.get("email")
-
-            if not email:
-                return JsonResponse({
-                    "status": "error",
-                    "message": "Email is required."
-                })
-
-            otp_code = str(random.randint(100000, 999999))
-
-            # Save OTP
-            OTP.objects.create(
-                email=email,
-                code=otp_code,
-                created_at=timezone.now()
-            )
-
-            # Send OTP email
-            send_mail(
-                subject="SkillConnect OTP Verification",
-                message=(
-                    f"Hello,\n\n"
-                    f"Your OTP for SkillConnect verification is:\n\n"
-                    f"{otp_code}\n\n"
-                    f"This OTP is valid for 10 minutes.\n\n"
-                    f"Do not share this OTP with anyone.\n\n"
-                    f"— SkillConnect Team"
-                ),
-                from_email="noreply@skillconnect.com",
-                recipient_list=[email],
-                fail_silently=False,
-            )
-
-            return JsonResponse({
-                "status": "success",
-                "message": "A new OTP has been sent to your email."
-            })
-
-        except Exception as e:
-            return JsonResponse({
-                "status": "error",
-                "message": str(e)
-            })
-
-    return JsonResponse({
-        "status": "error",
-        "message": "Invalid request."
-    })
 
 from django.core.mail import send_mail
 import random
@@ -255,7 +162,20 @@ import re
 from django.http import JsonResponse
 
 
-@csrf_exempt
+import random
+from datetime import timedelta
+from django.utils import timezone
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.core.mail import send_mail
+from django.contrib.auth.hashers import make_password
+
+from .models import Freelancer, Recruiter, OTP
+
+
+# ------------------------------
+# Registration View
+# ------------------------------
 def register_user(request):
     if request.method == "POST" and request.headers.get("X-Requested-With") == "XMLHttpRequest":
         account_type = request.POST.get("account_type")
@@ -287,7 +207,6 @@ def register_user(request):
             hashed_password = make_password(password)
 
             if account_type == "freelancer":
-                # Optional: calculate service fee if you want
                 SERVICE_FEE_PERCENT = 10
                 expected_hourly_rate = float(hourly_rate) if hourly_rate else 0
                 service_fee = expected_hourly_rate * SERVICE_FEE_PERCENT / 100
@@ -323,23 +242,106 @@ def register_user(request):
 
             # Generate OTP
             otp_code = str(random.randint(100000, 999999))
-            OTP.objects.create(email=email, code=otp_code)
+            OTP.objects.create(email=email, code=otp_code, created_at=timezone.now())
 
             # Send OTP email
             send_mail(
                 subject="SkillConnect OTP Verification",
-                message=f"Hello {full_name},\nYour OTP for SkillConnect signup is: {otp_code}",
+                message=f"Hello {full_name},\nYour OTP for SkillConnect signup is: {otp_code}\n\nThis OTP is valid for 10 minutes.",
                 from_email="noreply@skillconnect.com",
                 recipient_list=[email],
                 fail_silently=False,
             )
 
-            return JsonResponse({"status": "success"})
+            # Return success with email
+            return JsonResponse({"status": "success", "email": email})
 
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)})
 
     return JsonResponse({"status": "error", "message": "Invalid request."})
+
+
+# ------------------------------
+# Render OTP Page
+# ------------------------------
+def verify_otp_page(request):
+    email = request.GET.get("email")
+    if not email:
+        return render(request, "error.html", {"message": "Email not provided."})
+    return render(request, "verify_otp.html", {"email": email})
+
+
+# ------------------------------
+# Verify OTP POST
+# ------------------------------
+def verify_otp(request):
+    if request.method == "POST":
+        email = request.POST.get("email")
+        entered_otp = request.POST.get("otp")
+
+        otp_record = OTP.objects.filter(email=email).order_by('-created_at').first()
+        if not otp_record:
+            return JsonResponse({"status": "error", "message": "OTP not found."})
+
+        if timezone.now() > otp_record.created_at + timedelta(minutes=10):
+            otp_record.delete()
+            return JsonResponse({"status": "error", "message": "OTP expired."})
+
+        if str(otp_record.code) != str(entered_otp):
+            return JsonResponse({"status": "error", "message": "Incorrect OTP."})
+
+        # Activate user and set session
+        if Freelancer.objects.filter(email=email).exists():
+            user = Freelancer.objects.get(email=email)
+            account_type = "freelancer"
+            redirect_url = "freelancer-dashboard"
+        else:
+            user = Recruiter.objects.get(email=email)
+            account_type = "recruiter"
+            redirect_url = "recruiter-dashboard"
+
+        user.is_active = True
+        user.save()
+
+        request.session['user_id'] = user.id
+        request.session['account_type'] = account_type
+
+        otp_record.delete()
+
+        return JsonResponse({
+            "status": "success",
+            "message": "OTP verified successfully!",
+            "redirect_url": redirect_url
+        })
+
+    return JsonResponse({"status": "error", "message": "Invalid request."})
+
+
+# ------------------------------
+# Resend OTP
+# ------------------------------
+def resend_otp(request):
+    if request.method == "POST":
+        email = request.POST.get("email")
+        if not email:
+            return JsonResponse({"status": "error", "message": "Email is required."})
+
+        otp_code = str(random.randint(100000, 999999))
+        OTP.objects.create(email=email, code=otp_code, created_at=timezone.now())
+
+        send_mail(
+            subject="SkillConnect OTP Verification",
+            message=f"Hello,\nYour new OTP for SkillConnect verification is: {otp_code}\n\nThis OTP is valid for 10 minutes.",
+            from_email="noreply@skillconnect.com",
+            recipient_list=[email],
+            fail_silently=False,
+        )
+
+        return JsonResponse({"status": "success", "message": "A new OTP has been sent to your email."})
+
+    return JsonResponse({"status": "error", "message": "Invalid request."})
+
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.hashers import check_password
