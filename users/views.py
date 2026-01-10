@@ -176,7 +176,25 @@ from .models import Freelancer, Recruiter, OTP
 # ------------------------------
 # Registration View
 # ------------------------------
+import random
+from datetime import timedelta
+from django.utils import timezone
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.core.mail import send_mail
+from django.contrib.auth.hashers import make_password
+
+from .models import Freelancer, Recruiter, OTP
+from decouple import config
+
+# ------------------------------
+# Registration View
+# ------------------------------
 def register_user(request):
+    """
+    Step 1: Collect user info and generate OTP
+    Step 2: Save OTP to DB without creating user yet
+    """
     if request.method == "POST" and request.headers.get("X-Requested-With") == "XMLHttpRequest":
         account_type = request.POST.get("account_type")
         full_name = request.POST.get("full_name")
@@ -204,57 +222,41 @@ def register_user(request):
             return JsonResponse({"status": "error", "message": "User with this email already exists."})
 
         try:
+            # Hash password
             hashed_password = make_password(password)
-
-            if account_type == "freelancer":
-                SERVICE_FEE_PERCENT = 10
-                expected_hourly_rate = float(hourly_rate) if hourly_rate else 0
-                service_fee = expected_hourly_rate * SERVICE_FEE_PERCENT / 100
-                net_hourly_rate = expected_hourly_rate - service_fee
-
-                user = Freelancer.objects.create(
-                    full_name=full_name,
-                    email=email,
-                    password=hashed_password,
-                    experience_level=experience_level,
-                    resume=resume,
-                    linkedin=linkedin,
-                    hourly_rate=hourly_rate if hourly_rate else None,
-                    education=education,
-                    tech_stack=tech_stack,
-                    skills=skills,
-                    dob=dob if dob else None,
-                    phone=phone,
-                    address=address,
-                    photo=photo,
-                    is_active=False
-                )
-
-            elif account_type == "recruiter":
-                user = Recruiter.objects.create(
-                    full_name=full_name,
-                    email=email,
-                    password=hashed_password,
-                    is_active=False
-                )
-            else:
-                return JsonResponse({"status": "error", "message": "Invalid account type."})
 
             # Generate OTP
             otp_code = str(random.randint(100000, 999999))
-            OTP.objects.create(email=email, code=otp_code, created_at=timezone.now())
+            OTP.objects.create(
+                email=email,
+                code=otp_code,
+                account_type=account_type,
+                full_name=full_name,
+                password=hashed_password,
+                experience_level=experience_level,
+                resume=resume,
+                linkedin=linkedin,
+                hourly_rate=hourly_rate,
+                education=education,
+                tech_stack=tech_stack,
+                skills=skills,
+                dob=dob,
+                phone=phone,
+                address=address,
+                photo=photo,
+                created_at=timezone.now()
+            )
 
             # Send OTP email
             send_mail(
                 subject="SkillConnect OTP Verification",
                 message=f"Hello {full_name},\nYour OTP for SkillConnect signup is: {otp_code}\n\nThis OTP is valid for 10 minutes.",
-                from_email="noreply@skillconnect.com",
+                from_email="SkillConnect <noreply@skillconnect.com>",
                 recipient_list=[email],
                 fail_silently=False,
             )
 
-            # Return success with email
-            return JsonResponse({"status": "success", "email": email})
+            return JsonResponse({"status": "success", "email": email, "message": "OTP sent to email."})
 
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)})
@@ -263,19 +265,12 @@ def register_user(request):
 
 
 # ------------------------------
-# Render OTP Page
-# ------------------------------
-def verify_otp_page(request):
-    email = request.GET.get("email")
-    if not email:
-        return render(request, "error.html", {"message": "Email not provided."})
-    return render(request, "verify_otp.html", {"email": email})
-
-
-# ------------------------------
 # Verify OTP POST
 # ------------------------------
 def verify_otp(request):
+    """
+    Step 2: Verify OTP and then create the user
+    """
     if request.method == "POST":
         email = request.POST.get("email")
         entered_otp = request.POST.get("otp")
@@ -291,31 +286,60 @@ def verify_otp(request):
         if str(otp_record.code) != str(entered_otp):
             return JsonResponse({"status": "error", "message": "Incorrect OTP."})
 
-        # Activate user and set session
-        if Freelancer.objects.filter(email=email).exists():
-            user = Freelancer.objects.get(email=email)
-            account_type = "freelancer"
+        # Create user after OTP verification
+        account_type = otp_record.account_type
+        hashed_password = otp_record.password
+
+        if account_type == "freelancer":
+            user = Freelancer.objects.create(
+                full_name=otp_record.full_name,
+                email=otp_record.email,
+                password=hashed_password,
+                experience_level=otp_record.experience_level,
+                resume=otp_record.resume,
+                linkedin=otp_record.linkedin,
+                hourly_rate=otp_record.hourly_rate,
+                education=otp_record.education,
+                tech_stack=otp_record.tech_stack,
+                skills=otp_record.skills,
+                dob=otp_record.dob,
+                phone=otp_record.phone,
+                address=otp_record.address,
+                photo=otp_record.photo,
+                is_active=True
+            )
             redirect_url = "freelancer-dashboard"
         else:
-            user = Recruiter.objects.get(email=email)
-            account_type = "recruiter"
+            user = Recruiter.objects.create(
+                full_name=otp_record.full_name,
+                email=otp_record.email,
+                password=hashed_password,
+                is_active=True
+            )
             redirect_url = "recruiter-dashboard"
 
-        user.is_active = True
-        user.save()
-
+        # Set session
         request.session['user_id'] = user.id
         request.session['account_type'] = account_type
 
+        # Delete OTP record
         otp_record.delete()
 
-        return JsonResponse({
-            "status": "success",
-            "message": "OTP verified successfully!",
-            "redirect_url": redirect_url
-        })
+        return JsonResponse({"status": "success", "message": "OTP verified and account created!", "redirect_url": redirect_url})
 
     return JsonResponse({"status": "error", "message": "Invalid request."})
+
+def verify_otp_page(request):
+    email = request.GET.get("email")
+    if not email:
+        return render(request, "error.html", {"message": "Email not provided."})
+    return render(request, "verify_otp.html", {"email": email})
+
+
+# ------------------------------
+# Verify OTP POST
+# ------------------------------
+
 
 
 # ------------------------------
