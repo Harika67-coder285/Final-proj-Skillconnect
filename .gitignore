@@ -60,3 +60,10 @@ Thumbs.db
 # ==============================
 *.swp
 *.bak
+venv/
+.env
+__pycache__/
+db.sqlite3
+media/
+staticfiles/
+*.pyc
