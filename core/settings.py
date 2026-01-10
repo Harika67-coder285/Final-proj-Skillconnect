@@ -13,7 +13,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['.onrender.com']
 
 
 # -------------------- INSTALLED APPS --------------------
@@ -123,7 +122,11 @@ CORS_ALLOW_ALL_ORIGINS = True  # change to False in production if needed
 CSRF_COOKIE_SECURE = False  # True if using HTTPS
 SESSION_COOKIE_SECURE = False  # True if using HTTPS
 CSRF_COOKIE_HTTPONLY = False
-CSRF_TRUSTED_ORIGINS = [f"https://{config('ALLOWED_HOSTS')}"]
+ALLOWED_HOSTS = ['.onrender.com']
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.onrender.com'
+]
 
 # -------------------- EMAIL --------------------
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
