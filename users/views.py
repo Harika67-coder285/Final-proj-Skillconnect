@@ -582,47 +582,36 @@ def update_profile(request):
 
     return render(request, "settings_page.html", {"app_user": freelancer})
 
-import json
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-import google.generativeai as genai
 
 import os
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+import google.generativeai as genai
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
-# Configure your Gemini API key here
-genai_client = genai.Client(api_key=GEMINI_API_KEY)
 
-import time
 @csrf_exempt
 def chatbot(request):
-    if request.method == "POST":
-        data = json.loads(request.body)
-        user_message = data.get("message", "").strip()
-        if not user_message:
-            return JsonResponse({"reply": "Please type a message!"})
+    if request.method != "POST":
+        return JsonResponse({"reply": "Invalid request"}, status=400)
 
-        bot_reply = "Sorry, something went wrong."
-        for attempt in range(3):  # Retry up to 3 times
-            try:
-                response = genai_client.models.generate_content(
-                    model="models/gemini-2.5-flash",  # Free, fast model
-                    contents=[user_message]
-                )
-                bot_reply = response.text
-                break  # Success, exit retry loop
-            except Exception as e:
-                if "503" in str(e):
-                    bot_reply = "Bot is busy, retrying..."
-                    time.sleep(2)  # wait 2 sec before retry
-                    continue
-                else:
-                    bot_reply = f"Error: {str(e)}"
-                    break
+    data = json.loads(request.body)
+    user_message = data.get("message", "").strip()
 
-        return JsonResponse({"reply": bot_reply})
-    
-    return JsonResponse({"reply": "Invalid request"}, status=400)
+    if not user_message:
+        return JsonResponse({"reply": "Please type something"})
+
+    try:
+        # ✅ Read directly from Render env vars
+        genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+
+        model = genai.GenerativeModel("gemini-pro")
+        response = model.generate_content(user_message)
+
+        return JsonResponse({"reply": response.text})
+
+    except Exception as e:
+        return JsonResponse({"reply": f"Error: {str(e)}"}, status=500)
+
 def post_job(request):
     if request.session.get("account_type") != "recruiter":
         return redirect("login_page")
