@@ -583,10 +583,11 @@ def update_profile(request):
     return render(request, "settings_page.html", {"app_user": freelancer})
 
 
+import json
 import os
-import google.generativeai as genai
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from google import genai   # ✅ NEW SDK
 
 
 @csrf_exempt
@@ -601,11 +602,13 @@ def chatbot(request):
         return JsonResponse({"reply": "Please type something"})
 
     try:
-        # ✅ Read directly from Render env vars
-        genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+        # ✅ Read from Render env variables
+        client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-        model = genai.GenerativeModel("gemini-pro")
-        response = model.generate_content(user_message)
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=user_message
+        )
 
         return JsonResponse({"reply": response.text})
 
