@@ -13,8 +13,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-# Add your PythonAnywhere domain here
-ALLOWED_HOSTS = [config('ALLOWED_HOSTS', default='yourusername.pythonanywhere.com')]
+ALLOWED_HOSTS = ['.onrender.com']
+
 
 # -------------------- INSTALLED APPS --------------------
 INSTALLED_APPS = [
